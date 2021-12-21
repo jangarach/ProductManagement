@@ -1,0 +1,133 @@
+﻿@model IEnumerable<ProductManagementWebApp.Models.ProductViewModel>
+@{
+    Layout = "~/Views/Shared/_BaseLayout.cshtml";
+    ViewBag.Title = "Информация о продукте";
+    WebGrid webGrid = new WebGrid(source: Model, canSort: false);
+}
+
+<div class="box">
+    <div class="box-content">
+        <button id="btnAdd" class="btn btn-primary btn-sm">Добавить</button>
+        @webGrid.GetHtml(
+            htmlAttributes: new { @id = "WebGrid", @class = "table table-responsive table-bordered" },
+            columns: webGrid.Columns(
+                     webGrid.Column("Name", "Название"),
+                     webGrid.Column("Description", "Описание"),
+                     webGrid.Column("", format: @<div>
+                            <button id="btnEdit" class="btn btn-primary btn-sm" data-id="@item.Id">Редактировать</button>
+                            <button id="btnDelete" class="btn btn-danger btn-sm" data-id="@item.Id">Удалить</button>
+                        </div>
+))
+)
+        <div id="addModal" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document" id="dialogContent">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Добавить продукт</h2>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    @using (Ajax.BeginForm("Add", "Product", FormMethod.Post,
+                    new AjaxOptions
+                    {
+                        InsertionMode = InsertionMode.Replace,
+                        HttpMethod = "POST",
+                        UpdateTargetId = "list-of-product"
+                    }))
+                    {
+                        @Html.ValidationSummary()
+                        @Html.AntiForgeryToken()
+                        <div class="modal-body">
+                            <div class="container" id="productForm">
+                                <div class="form-group">
+                                    Название:
+                                    <input class="form-control" id="Name" name="Name" type="text">
+                                </div>
+                                <div class="form-group">
+                                    Описание:
+                                    <input class="form-control" id="Description" name="Description" type="text">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary" id="submitBtn" data-save="modal">Сохранить</button>
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div id="editModal" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document" id="dialogContent">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Редактировать продукт</h2>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    @using (Ajax.BeginForm("Update", "Product", FormMethod.Post,
+                    new AjaxOptions
+                    {
+                        InsertionMode = InsertionMode.Replace,
+                        HttpMethod = "POST",
+                        UpdateTargetId = "list-of-product"
+                    }))
+                    {
+                        @Html.ValidationSummary()
+                        @Html.AntiForgeryToken()
+                        <div class="modal-body">
+                            <div id="editModalContent"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary" id="submitBtn" data-save="modal">Сохранить</button>
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+@section scripts{
+    <script>
+        $(function () {
+            $("body").on('click', '#btnAdd', function () {
+                $("#addModal").modal("show");
+            });
+
+            $("body").on('click', '#btnEdit', function () {
+                var obj = {};
+                obj.Id = $(this).attr('data-id');
+                $.ajax({
+                    url: '/Product/Edit/' + obj.Id,
+                    type: 'Get',
+                    dataType: 'html',
+                    contentType: "application/json; charset=utf-8",
+                    success: function (response) {
+                        $("#editModalContent").html(response);
+                        $("#editModal").modal("show");
+                    }
+                });
+            });
+
+            $("body").on('click', '#btnDelete', function () {
+                var obj = {};
+                obj.Id = $(this).attr('data-id');
+                $.ajax({
+                    url: '/Product/Delete/' + obj.Id,
+                    type: 'DELETE',
+                    dataType: 'json',
+                    contentType: "application/json; charset=utf-8",
+                    success: function (response) {
+                        window.location.reload();
+                    }
+                });
+            });
+
+        });
+    </script>
+}
